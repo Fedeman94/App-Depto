@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#fdf6f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gastos Depto">
+<title>Gastos Depto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f0e8e0;
+    --bg2:       #ede0d6;
+    --bg3:       #e4d5cb;
+    --surface:   #ddd0c8;
+    --border:    #cebfb5;
+    --accent1:   #6aaf8e;
+    --accent2:   #d9885a;
+    --accent3:   #8898d4;
+    --accent1d:  #4a9278;
+    --accent2d:  #bf6e40;
+    --text:      #4a3a30;
+    --muted:     #8a7060;
+    --danger:    #e07070;
+    --success:   #7ec8a4;
+    --card-r:    20px;
+    --font-d:    'Nunito', sans-serif;
+    --font-b:    'Nunito', sans-serif;
+    --font-s:    'Lora', serif;
+  }
+
+  /* ── Modo oscuro ── */
+  body.dark {
+    --bg:        #1a1612;
+    --bg2:       #221e1a;
+    --bg3:       #2a2420;
+    --surface:   #332c28;
+    --border:    #3e3530;
+    --accent1:   #6aaf8e;
+    --accent2:   #d9885a;
+    --accent3:   #8898d4;
+    --accent1d:  #88c8a8;
+    --accent2d:  #e8a070;
+    --text:      #ede0d6;
+    --muted:     #8a7a6e;
+    --danger:    #e07070;
+    --success:   #6aaf8e;
+  }
+  body.dark html,
+  body.dark {
+    background-image: none;
+  }
+
+  /* Toggle switch */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 14px; font-weight: 600; }
+  .toggle-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .toggle-switch {
+    position: relative; width: 48px; height: 26px; flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: var(--bg3); border: 1.5px solid var(--border);
+    border-radius: 26px; transition: all .3s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; border-radius: 50%;
+    left: 3px; top: 50%; transform: translateY(-50%);
+    background: var(--muted); transition: all .3s;
+  }
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--accent1); border-color: var(--accent1d);
+  }
+  .toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(22px) translateY(-50%);
+    background: #fff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-b);
+    font-size: 15px;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    background-image: radial-gradient(circle at 20% 50%, rgba(126,200,164,.04) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(244,162,107,.04) 0%, transparent 50%);
+  }
+
+  /* ── App Shell ── */
+  #app { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Screens ── */
+  .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* ── Header ── */
+  .top-bar {
+    padding: 16px 20px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    box-shadow: 0 2px 8px rgba(61,44,36,.08);
+  }
+  .top-bar h1 { font-family: var(--font-b); font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+  .top-bar .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-d); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: opacity .2s;
+  }
+  .top-bar .avatar:hover { opacity: .8; }
+
+  /* ── Scroll content ── */
+  .scroll-content {
+    flex: 1; overflow-y: auto; padding: 16px 16px 80px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    display: flex; align-items: stretch;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 4px; padding: 10px 4px;
+    background: none; border: none; color: var(--muted);
+    font-family: var(--font-b); font-size: 10px; cursor: pointer;
+    transition: color .2s; position: relative;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active { color: var(--accent1); }
+  .nav-btn.active::before {
+    content: ''; position: absolute; top: 0; left: 20%; right: 20%;
+    height: 2px; background: var(--accent1); border-radius: 0 0 4px 4px;
+  }
+  .nav-btn:nth-child(3).active { color: var(--accent2); }
+  .nav-btn:nth-child(3).active::before { background: var(--accent2); }
+  .nav-btn { font-weight: 600; font-size: 11px; }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed; bottom: calc(72px + env(safe-area-inset-bottom)); right: 20px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent1), var(--accent1d));
+    border: none; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(106,175,142,.35);
+    transition: transform .2s, box-shadow .2s;
+    z-index: 100;
+  }
+  .fab:active { transform: scale(.93); box-shadow: 0 2px 10px rgba(126,200,164,.3); }
+  .fab svg { width: 26px; height: 26px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-r);
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(61,44,36,.08);
+  }
+  .card-sm { padding: 12px 14px; }
+
+  /* ── Balance cards ── */
+  .balance-hero {
+    background: linear-gradient(135deg, #e8d8cc, #ddd0c4);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .balance-hero::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(0,212,170,.15), transparent 70%);
+    border-radius: 50%;
+  }
+  .balance-hero .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; }
+  .balance-hero .amount { font-family: var(--font-s); font-size: 38px; font-weight: 600; line-height: 1; }
+  .balance-hero .amount.positive { color: var(--accent1); }
+  .balance-hero .amount.negative { color: var(--accent2); }
+  .balance-hero .amount.zero { color: var(--muted); }
+  .balance-hero .who { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  .split-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+  }
+  .split-card {
+    border-radius: 14px; padding: 16px 14px;
+    border: 1px solid;
+  }
+  .split-card.p1 { background: rgba(126,200,164,.12); border-color: rgba(126,200,164,.35); }
+  .split-card.p2 { background: rgba(244,162,107,.12); border-color: rgba(244,162,107,.35); }
+  .split-card .sc-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .split-card.p1 .sc-label { color: var(--accent1d); }
+  .split-card.p2 .sc-label { color: var(--accent2d); }
+  .split-card .sc-name { font-family: var(--font-d); font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .split-card .sc-amount { font-family: var(--font-d); font-size: 22px; font-weight: 800; }
+  .split-card.p1 .sc-amount { color: var(--accent1d); }
+  .split-card.p2 .sc-amount { color: var(--accent2d); }
+  .split-card .sc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Expense items ── */
+  .expense-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp .3s ease;
+  }
+  .expense-item:last-child { border-bottom: none; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .exp-icon {
+    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .exp-info { flex: 1; min-width: 0; }
+  .exp-desc { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .exp-meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; gap: 6px; align-items: center; }
+  .exp-badge {
+    font-size: 9px; text-transform: uppercase; letter-spacing: .8px; font-weight: 600;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .badge-p1 { background: rgba(126,200,164,.2); color: var(--accent1d); }
+  .badge-p2 { background: rgba(244,162,107,.2); color: var(--accent2d); }
+  .badge-split { background: rgba(168,184,240,.2); color: #6678cc; }
+  .exp-right { text-align: right; flex-shrink: 0; }
+  .exp-amount { font-family: var(--font-d); font-size: 15px; font-weight: 700; }
+  .exp-saldo { font-size: 11px; margin-top: 2px; }
+  .exp-saldo.owes { color: var(--accent2d); }
+  .exp-saldo.owed { color: var(--accent1d); }
+  .exp-paid { font-size: 10px; color: var(--muted); text-decoration: line-through; }
+
+  /* ── Section title ── */
+  .section-title {
+    font-family: var(--font-b); font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 2px; color: var(--muted);
+    margin: 20px 0 10px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* ── Chip filters ── */
+  .chips { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 24px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: all .2s; white-space: nowrap;
+  }
+  .chip.active { background: var(--accent1); border-color: var(--accent1); color: #fff; font-weight: 700; }
+
+  /* ── Form ── */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; display: block; }
+  .form-input, .form-select {
+    width: 100%; padding: 13px 16px;
+    background: var(--bg3); border: 1.5px solid var(--border);
+    border-radius: 14px; color: var(--text);
+    font-family: var(--font-b); font-size: 15px;
+    transition: border-color .2s;
+    -webkit-appearance: none;
+  }
+  .form-input:focus, .form-select:focus {
+    outline: none; border-color: var(--accent1);
+    box-shadow: 0 0 0 3px rgba(126,200,164,.2);
+  }
+  .form-input.amount-input {
+    font-family: var(--font-s); font-size: 32px; font-weight: 600;
+    text-align: center; letter-spacing: -1px;
+    padding: 18px; background: var(--bg3);
+  }
+  .form-input.amount-input::placeholder { color: var(--border); }
+  .form-input::placeholder { color: var(--muted); }
+
+  .tipo-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .tipo-btn {
+    padding: 12px 8px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--bg3); color: var(--muted);
+    font-family: var(--font-b); font-size: 12px; font-weight: 500;
+    cursor: pointer; text-align: center; transition: all .2s; line-height: 1.3;
+  }
+  .tipo-btn .tipo-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .tipo-btn.sel-p1 { border-color: var(--accent1); background: rgba(126,200,164,.15); color: var(--accent1d); }
+  .tipo-btn.sel-p2 { border-color: var(--accent2); background: rgba(244,162,107,.15); color: var(--accent2d); }
+  .tipo-btn.sel-split { border-color: var(--accent3); background: rgba(168,184,240,.15); color: #6678cc; }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%; padding: 15px; border-radius: 14px; border: none;
+    font-family: var(--font-d); font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: all .2s; letter-spacing: .3px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent1), var(--accent1d));
+    color: #0f1923;
+    box-shadow: 0 4px 16px rgba(0,212,170,.3);
+  }
+  .btn-primary:active { transform: scale(.98); box-shadow: 0 2px 8px rgba(126,200,164,.3); }
+  .btn-ghost {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-danger { background: rgba(224,112,112,.12); color: var(--danger); border: 1.5px solid rgba(224,112,112,.3); }
+
+  /* ── Login screen ── */
+  #screen-login {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100dvh; padding: 32px 24px;
+    background: var(--bg);
+    gap: 0;
+  }
+  .login-logo {
+    width: 72px; height: 72px; border-radius: 24px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent1d));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(0,212,170,.3);
+  }
+  .login-title { font-family: var(--font-s); font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 6px; font-style: italic; }
+  .login-sub { color: var(--muted); font-size: 14px; text-align: center; margin-bottom: 40px; }
+  .person-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 360px; margin-bottom: 24px; }
+  .person-card {
+    border-radius: 24px; padding: 24px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    border: 2px solid; cursor: pointer;
+    transition: transform .2s, box-shadow .2s; text-align: center;
+  }
+  .person-card:active { transform: scale(.96); }
+  .person-card.p1 { background: rgba(126,200,164,.1); border-color: rgba(126,200,164,.4); }
+  .person-card.p2 { background: rgba(244,162,107,.1); border-color: rgba(244,162,107,.4); }
+  .person-card:hover.p1 { box-shadow: 0 8px 24px rgba(126,200,164,.25); }
+  .person-card:hover.p2 { box-shadow: 0 8px 24px rgba(244,162,107,.25); }
+  .person-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-d); font-size: 20px; font-weight: 800;
+  }
+  .p1 .person-avatar { background: rgba(126,200,164,.25); color: var(--accent1d); }
+  .p2 .person-avatar { background: rgba(244,162,107,.25); color: var(--accent2d); }
+  .person-name { font-family: var(--font-d); font-size: 15px; font-weight: 700; }
+  .p1 .person-name { color: var(--accent1d); }
+  .p2 .person-name { color: var(--accent2d); }
+
+  /* ── Config screen ── */
+  .config-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .config-item:last-child { border-bottom: none; }
+  .config-label { font-size: 14px; }
+  .config-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .config-value { font-size: 14px; color: var(--muted); font-family: var(--font-d); }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 20px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: all .3s; pointer-events: none;
+    white-space: nowrap; z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 200;
+    align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 28px 28px 0 0; padding: 24px 20px;
+    width: 100%; max-width: 520px;
+    max-height: 90dvh; overflow-y: auto;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: var(--font-s); font-size: 22px; font-weight: 600; margin-bottom: 20px; font-style: italic; }
+
+  /* ── Stats ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px;
+  }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .stat-value { font-family: var(--font-d); font-size: 20px; font-weight: 800; }
+  .stat-value.teal { color: var(--accent1d); }
+  .stat-value.coral { color: var(--accent2d); }
+  .stat-value.indigo { color: #6678cc; }
+
+  /* ── Paid button ── */
+  .mark-paid-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; padding: 3px 8px;
+    color: var(--muted); font-size: 10px; cursor: pointer;
+    transition: all .2s; font-family: var(--font-b);
+  }
+  .mark-paid-btn:hover { border-color: var(--accent1d); color: var(--accent1d); }
+
+  /* ── Sync status ── */
+  .sync-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 20px;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--muted); flex-shrink: 0;
+  }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .sync-dot.ok { background: var(--accent1d); box-shadow: 0 0 6px rgba(126,200,164,.5); }
+  .sync-dot.error { background: var(--danger); }
+  .sync-dot.syncing { background: var(--accent3); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+
+
+
+  /* ── Balance filters ── */
+  .balance-filters {
+    display: flex; gap: 8px; margin-bottom: 14px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .bal-filter-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+  .bal-filter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); font-weight: 700; }
+  .bal-filter-select {
+    padding: 8px 12px; border-radius: 12px;
+    background: var(--bg3); border: 1.5px solid var(--border);
+    color: var(--text); font-family: var(--font-b); font-size: 13px;
+    font-weight: 600; -webkit-appearance: none; cursor: pointer;
+    transition: border-color .2s;
+  }
+  .bal-filter-select:focus { outline: none; border-color: var(--accent1); }
+  .bal-filter-select.active { border-color: var(--accent1); background: rgba(106,175,142,.1); color: var(--accent1d); }
+  .bal-reset-btn {
+    align-self: flex-end; padding: 8px 14px; border-radius: 12px;
+    background: var(--bg3); border: 1.5px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: var(--font-b); transition: all .2s;
+    white-space: nowrap;
+  }
+  .bal-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Stats mini row */
+  .stats-mini {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+  }
+  .stat-mini {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 10px; text-align: center;
+  }
+  .stat-mini-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 4px; }
+  .stat-mini-val { font-family: var(--font-s); font-size: 16px; font-weight: 600; }
+
+  /* ── Edit / Delete actions ── */
+  .expense-item { position: relative; }
+  .exp-actions {
+    display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end;
+  }
+  .action-btn {
+    padding: 4px 10px; border-radius: 8px; border: 1.5px solid;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    font-family: var(--font-b); transition: all .2s;
+  }
+  .action-btn.edit {
+    background: rgba(168,184,240,.15); border-color: var(--accent3);
+    color: #6678cc;
+  }
+  .action-btn.edit:hover { background: rgba(168,184,240,.3); }
+  .action-btn.delete {
+    background: rgba(224,112,112,.1); border-color: var(--danger);
+    color: var(--danger);
+  }
+  .action-btn.delete:hover { background: rgba(224,112,112,.2); }
+
+  /* Modal confirmación eliminar */
+  #modal-confirm { z-index: 300; }
+  .confirm-box {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 24px 24px 0 0; padding: 28px 24px;
+    width: 100%; max-width: 520px;
+    animation: slideUp .3s ease;
+  }
+  .confirm-title { font-family: var(--font-s); font-size: 20px; font-weight: 600;
+    margin-bottom: 8px; font-style: italic; }
+  .confirm-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+
+  /* ── Date filter ── */
+  .date-filter {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .date-filter label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); white-space: nowrap;
+  }
+  .date-filter input[type="date"] {
+    flex: 1; min-width: 120px; padding: 7px 12px;
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 12px; color: var(--text);
+    font-family: var(--font-b); font-size: 13px;
+    -webkit-appearance: none;
+  }
+  .date-filter input[type="date"]:focus {
+    outline: none; border-color: var(--accent1);
+  }
+  .date-filter .clear-btn {
+    padding: 7px 12px; border-radius: 12px;
+    background: var(--bg3); border: 1.5px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; font-family: var(--font-b);
+    transition: all .2s;
+  }
+  .date-filter .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .date-sep { font-size: 12px; color: var(--muted); }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 48px 24px; }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .empty-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Category icons map ── */
+  /* handled in JS */
+
+  /* Swipe to delete hint */
+  .hint-text { font-size: 11px; color: var(--muted); text-align: center; padding: 8px; }
+
+  .config-url-input {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: var(--font-b); font-size: 12px;
+    margin-top: 8px;
+  }
+  .config-url-input:focus { outline: none; border-color: var(--accent1); }
+
+  .steps { counter-reset: step; }
+  .step {
+    display: flex; gap: 12px; margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent3); color: var(--text);
+    font-family: var(--font-d); font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+  .step p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .step strong { color: var(--text); }
+  .code-block {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    font-family: monospace; font-size: 11px; color: var(--accent1);
+    margin-top: 8px; white-space: pre-wrap; word-break: break-all;
+    line-height: 1.6; max-height: 160px; overflow-y: auto;
+  }
+  .copy-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; color: var(--muted);
+    font-size: 11px; cursor: pointer; margin-top: 6px; width: 100%;
+    font-family: var(--font-b); transition: all .2s;
+  }
+  .copy-btn:hover { border-color: var(--accent1d); color: var(--accent1d); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════════════════ LOGIN ════════════════ -->
+  <div id="screen-login" class="screen active">
+    <div class="login-logo">🏠</div>
+    <div class="login-title">Gastos Depto</div>
+    <div class="login-sub">¿Quién sos hoy?</div>
+    <div class="person-cards">
+      <div class="person-card p1" onclick="login('p1')">
+        <div class="person-avatar" id="av1">F</div>
+        <div class="person-name" id="ln1">Fede</div>
+        <div style="font-size:11px;color:var(--muted)">Persona 1</div>
+      </div>
+      <div class="person-card p2" onclick="login('p2')">
+        <div class="person-avatar" id="av2">M</div>
+        <div class="person-name" id="ln2">Mica</div>
+        <div style="font-size:11px;color:var(--muted)">Persona 2</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;line-height:1.7;max-width:280px">
+      Tus gastos se sincronizan automáticamente con el Excel compartido ☁️
+    </div>
+  </div>
+
+  <!-- ════════════════ MAIN APP ════════════════ -->
+  <div id="screen-main" class="screen" style="display:none">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div>
+        <div style="font-size:11px;color:var(--muted);letter-spacing:.5px">GASTOS DEPTO</div>
+        <h1 id="welcome-name">Hola 👋</h1>
+      </div>
+      <div class="avatar" id="user-avatar" onclick="showTab('config')" style="background:var(--accent1);color:var(--bg)">V</div>
+    </div>
+
+    <!-- Sync bar -->
+    <div class="sync-bar">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-text" style="flex:1">Sin conexión a Sheets — configurá la URL</span>
+      <button onclick="fetchExpenses()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;line-height:1" title="Sincronizar">🔄</button>
+    </div>
+
+    <!-- ── TAB: Balance ── -->
+    <div id="tab-balance" class="scroll-content" style="display:none">
+
+      <!-- Filtros del balance -->
+      <div class="balance-filters">
+        <div class="bal-filter-group">
+          <div class="bal-filter-label">Mes</div>
+          <select class="bal-filter-select" id="bal-mes" onchange="renderBalance()">
+            <option value="Todos">Todos</option>
+            <option value="Enero">Enero</option>
+            <option value="Febrero">Febrero</option>
+            <option value="Marzo">Marzo</option>
+            <option value="Abril">Abril</option>
+            <option value="Mayo">Mayo</option>
+            <option value="Junio">Junio</option>
+            <option value="Julio">Julio</option>
+            <option value="Agosto">Agosto</option>
+            <option value="Septiembre">Septiembre</option>
+            <option value="Octubre">Octubre</option>
+            <option value="Noviembre">Noviembre</option>
+            <option value="Diciembre">Diciembre</option>
+          </select>
+        </div>
+        <div class="bal-filter-group">
+          <div class="bal-filter-label">Tipo</div>
+          <select class="bal-filter-select" id="bal-tipo" onchange="renderBalance()">
+            <option value="Todos">Todos</option>
+            <option value="50/50">50/50</option>
+            <option value="P1">Solo Fede</option>
+            <option value="P2">Solo Mica</option>
+          </select>
+        </div>
+        <div class="bal-filter-group">
+          <div class="bal-filter-label">Estado</div>
+          <select class="bal-filter-select" id="bal-pagado" onchange="renderBalance()">
+            <option value="Todos">Todos</option>
+            <option value="No">Pendientes</option>
+            <option value="Sí">Pagados</option>
+          </select>
+        </div>
+        <button class="bal-reset-btn" onclick="resetBalanceFilters()">✕ Limpiar</button>
+      </div>
+
+      <div class="balance-hero" id="balance-hero">
+        <div class="label" id="balance-label">SALDO PENDIENTE</div>
+        <div class="amount zero" id="balance-amount">$0</div>
+        <div class="who" id="balance-who">Configurá la URL en ⚙️ Config</div>
+      </div>
+
+      <!-- Stats mini -->
+      <div class="stats-mini">
+        <div class="stat-mini">
+          <div class="stat-mini-label">N° gastos</div>
+          <div class="stat-mini-val" id="bal-count">0</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label">Promedio</div>
+          <div class="stat-mini-val" id="bal-avg">$0</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label">Total</div>
+          <div class="stat-mini-val" id="bal-total">$0</div>
+        </div>
+      </div>
+
+      <div class="split-row">
+        <div class="split-card p1">
+          <div class="sc-label">Persona 1</div>
+          <div class="sc-name" id="sc-name1">Fede</div>
+          <div class="sc-amount" id="sc-total1">$0</div>
+          <div class="sc-sub" id="sc-sub1">del período</div>
+        </div>
+        <div class="split-card p2">
+          <div class="sc-label">Persona 2</div>
+          <div class="sc-name" id="sc-name2">Mica</div>
+          <div class="sc-amount" id="sc-total2">$0</div>
+          <div class="sc-sub" id="sc-sub2">del período</div>
+        </div>
+      </div>
+
+      <div class="section-title">Resumen por categoría</div>
+      <div id="cat-summary"></div>
+
+    </div>
+
+    <!-- ── TAB: Gastos ── -->
+    <div id="tab-gastos" class="scroll-content" style="display:none">
+      <div class="chips" id="filter-chips">
+        <div class="chip active" onclick="filterExpenses('todos',this)">Todos</div>
+        <div class="chip" onclick="filterExpenses('p1',this)">Mis gastos</div>
+        <div class="chip" onclick="filterExpenses('p2',this)">Sus gastos</div>
+        <div class="chip" onclick="filterExpenses('split',this)">Compartidos</div>
+        <div class="chip" onclick="filterExpenses('pending',this)">Pendientes</div>
+      </div>
+      <div class="date-filter">
+        <label>Desde</label>
+        <input type="date" id="filter-date-from" onchange="renderExpenses()">
+        <span class="date-sep">→</span>
+        <label>Hasta</label>
+        <input type="date" id="filter-date-to" onchange="renderExpenses()">
+        <button class="clear-btn" onclick="clearDateFilter()">✕ Limpiar</button>
+      </div>
+      <div id="expenses-list"></div>
+    </div>
+
+    <!-- ── TAB: Config ── -->
+    <div id="tab-config" class="scroll-content" style="display:none">
+
+      <div class="section-title">Nombres</div>
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">Persona 1 – Fede</label>
+          <input class="form-input" id="cfg-name1" placeholder="Fede" oninput="saveConfig()">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Persona 2 – Mica</label>
+          <input class="form-input" id="cfg-name2" placeholder="Mica" oninput="saveConfig()">
+        </div>
+      </div>
+
+      <div class="section-title">Conexión a Google Sheets</div>
+      <div class="card">
+        <div class="config-item" style="flex-direction:column;align-items:flex-start;gap:8px;border:none;padding-top:0">
+          <div>
+            <div class="config-label">URL del Web App (Apps Script)</div>
+            <div class="config-sub">Pegá acá la URL que te da Google al publicar el script</div>
+          </div>
+          <input class="config-url-input" id="cfg-url" placeholder="https://script.google.com/macros/s/..." oninput="saveConfig()">
+          <button class="btn btn-ghost" style="margin-top:4px;padding:10px" onclick="testConnection()">Probar conexión</button>
+        </div>
+      </div>
+
+      <div class="section-title">Cómo conectar Google Sheets</div>
+      <div class="card">
+        <div class="steps">
+          <div class="step"><p><strong>Abrí tu Google Sheets</strong> con la planilla de gastos (o subí el Excel desde Drive).</p></div>
+          <div class="step"><p>Ir a <strong>Extensiones → Apps Script</strong> y borrar el código existente.</p></div>
+          <div class="step">
+            <div>
+              <p>Pegá este código completo:</p>
+              <div class="code-block" id="apps-script-code"></div>
+              <button class="copy-btn" onclick="copyScript()">📋 Copiar código</button>
+            </div>
+          </div>
+          <div class="step"><p>Clic en <strong>Implementar → Nueva implementación</strong>. Tipo: <strong>Aplicación web</strong>. Ejecutar como: <strong>Yo</strong>. Acceso: <strong>Cualquier persona</strong>.</p></div>
+          <div class="step"><p>Copiá la URL generada y pegála arriba en "URL del Web App".</p></div>
+        </div>
+      </div>
+
+      <div class="section-title">Apariencia</div>
+      <div class="card">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">🌙 Modo oscuro</div>
+            <div class="toggle-sub">Cambia entre claro y oscuro</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-dark" onchange="toggleDarkMode(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="section-title">Sesión</div>
+      <div class="card">
+        <button class="btn btn-danger" onclick="logout()">Cerrar sesión</button>
+      </div>
+
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" id="nav-balance" onclick="showTab('balance')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Balance
+      </button>
+      <button class="nav-btn" id="nav-gastos" onclick="showTab('gastos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Gastos
+      </button>
+      <button class="nav-btn" id="nav-nuevo" onclick="openNewExpense()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nuevo
+      </button>
+      <button class="nav-btn" id="nav-config" onclick="showTab('config')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Config
+      </button>
+    </nav>
+
+  </div><!-- /screen-main -->
+
+</div><!-- /app -->
+
+<!-- ════════════ MODAL: Nuevo Gasto ════════════ -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title-text">Nuevo gasto</div>
+
+    <div class="form-group">
+      <label class="form-label">Monto ($)</label>
+      <input class="form-input amount-input" id="exp-amount" type="number" inputmode="decimal" placeholder="0" min="0">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" id="exp-desc" placeholder="Ej: Factura de luz" maxlength="60">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <select class="form-select" id="exp-cat">
+        <option value="🏠 Alquiler y Expensas">🏠 Alquiler y Expensas</option>
+        <option value="🛒 Supermercado" selected>🛒 Supermercado</option>
+        <option value="💡 Servicios">💡 Servicios</option>
+        <option value="🍽️ Salidas">🍽️ Salidas</option>
+        <option value="🚗 Transporte">🚗 Transporte</option>
+        <option value="👤 Personal Fede">👤 Personal Fede</option>
+        <option value="👤 Personal Mica">👤 Personal Mica</option>
+        <option value="💰 Fondo Común">💰 Fondo Común</option>
+        <option value="📦 Otros">📦 Otros</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tipo de gasto</label>
+      <div class="tipo-selector">
+        <button class="tipo-btn" id="tipo-p1" onclick="selectTipo('P1')">
+          <span class="tipo-icon">👤</span>Solo mío
+        </button>
+        <button class="tipo-btn sel-split" id="tipo-split" onclick="selectTipo('50/50')">
+          <span class="tipo-icon">🤝</span>Mitad y mitad
+        </button>
+        <button class="tipo-btn" id="tipo-p2" onclick="selectTipo('P2')">
+          <span class="tipo-icon">👤</span>Solo de ella/él
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mes</label>
+      <select class="form-select" id="exp-mes">
+        <option value="Enero">Enero</option>
+        <option value="Febrero">Febrero</option>
+        <option value="Marzo">Marzo</option>
+        <option value="Abril">Abril</option>
+        <option value="Mayo">Mayo</option>
+        <option value="Junio">Junio</option>
+        <option value="Julio">Julio</option>
+        <option value="Agosto">Agosto</option>
+        <option value="Septiembre">Septiembre</option>
+        <option value="Octubre">Octubre</option>
+        <option value="Noviembre">Noviembre</option>
+        <option value="Diciembre">Diciembre</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha (opcional)</label>
+      <input class="form-input" id="exp-date" type="date">
+    </div>
+
+    <div id="modal-btn-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitExpense()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-confirm">
+  <div class="confirm-box">
+    <div class="modal-handle"></div>
+    <div class="confirm-title">🗑️ Eliminar gasto</div>
+    <div class="confirm-sub" id="confirm-desc">¿Seguro que querés eliminar este gasto? Esta acción no se puede deshacer.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDelete()" style="padding:15px">🗑️ Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+let state = {
+  user: null,       // 'p1' | 'p2'
+  expenses: [],
+  config: {
+    name1: 'Fede',
+    name2: 'Mica',
+    sheetsUrl: ''
+  },
+  selectedTipo: '50/50',
+  editingIdx: null,  // índice del gasto que se está editando (null = nuevo)
+  filterMode: 'todos',
+  dateFrom: '',
+  dateTo: '',
+  syncStatus: 'offline' // offline | ok | error | syncing
+};
+
+const CAT_ICONS = {
+  '🏠 Alquiler y Expensas':'🏠','🛒 Supermercado':'🛒','💡 Servicios':'💡',
+  '🍽️ Salidas':'🍽️','🚗 Transporte':'🚗','👤 Personal Fede':'👤',
+  '👤 Personal Mica':'👤','💰 Fondo Común':'💰','📦 Otros':'📦',
+  // compatibilidad v3
+  'Alquiler':'🏠','Supermercado':'🛒','Servicios':'💡','Salidas':'🍽️',
+  'Personal':'👤','Otros':'📦'
+};
+const CAT_COLORS = {
+  '🏠 Alquiler y Expensas':'#7b9cff','🛒 Supermercado':'#00d4aa',
+  '💡 Servicios':'#fbbf24','🍽️ Salidas':'#fb7185','🚗 Transporte':'#a78bfa',
+  '👤 Personal Fede':'#4ade80','👤 Personal Mica':'#e879f9',
+  '💰 Fondo Común':'#f97316','📦 Otros':'#94a3b8',
+  // compatibilidad v3
+  'Alquiler':'#7b9cff','Supermercado':'#00d4aa','Servicios':'#fbbf24',
+  'Salidas':'#fb7185','Personal':'#4ade80','Otros':'#94a3b8'
+};
+
+// ════════════════════════════════════════════════════
+//  APPS SCRIPT CODE
+// ════════════════════════════════════════════════════
+const APPS_SCRIPT = `const SHEET_NAME = "📋 Gastos";
+const DATA_START = 7; // fila donde empiezan los datos en el Excel v4
+
+function doGet(e) {
+  return handleRequest(e);
+}
+function doPost(e) {
+  return handleRequest(e);
+}
+
+function handleRequest(e) {
+  const params = e.parameter;
+  const action = params.action || (e.postData ? JSON.parse(e.postData.contents).action : null);
+  const body = e.postData ? JSON.parse(e.postData.contents) : params;
+
+  let result;
+  try {
+    if (action === "getAll") result = getAllExpenses();
+    else if (action === "add") result = addExpense(body);
+    else if (action === "markPaid") result = markPaid(body.row);
+    else result = { error: "Unknown action" };
+  } catch(err) {
+    result = { error: err.message };
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet() {
+  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+}
+
+function getAllExpenses() {
+  const sh = getSheet();
+  const lastRow = sh.getLastRow();
+  if (lastRow < DATA_START) return { expenses: [] };
+
+  const rows = sh.getRange(DATA_START, 1, lastRow - DATA_START + 1, 13).getValues();
+  const expenses = rows
+    .filter(r => r[1] && r[5])
+    .map((r, i) => ({
+      row: DATA_START + i,
+      num: r[0], fecha: r[1], categoria: r[2], descripcion: r[3],
+      quien: r[4], monto: r[5], tipo: r[6],
+      p1: r[7], p2: r[8], saldo: r[9], cobrador: r[10],
+      pagado: r[11], notas: r[12]
+    }));
+  return { expenses };
+}
+
+function addExpense(data) {
+  const sh = getSheet();
+  let targetRow = DATA_START;
+  while (sh.getRange(targetRow, 2).getValue() !== "") targetRow++;
+
+  const saldo = data.tipo === "50/50"
+    ? (data.quien === data.name1 ? data.monto/2 : -data.monto/2)
+    : 0;
+  const p1val = data.tipo === "P1" ? data.monto : (data.tipo === "50/50" ? data.monto/2 : 0);
+  const p2val = data.tipo === "P2" ? data.monto : (data.tipo === "50/50" ? data.monto/2 : 0);
+  const cobra = data.tipo === "50/50"
+    ? (data.quien === data.name1 ? data.name1 + " cobra" : data.name2 + " cobra")
+    : "-";
+
+  sh.getRange(targetRow, 1, 1, 13).setValues([[
+    targetRow - DATA_START + 1,
+    data.fecha, data.categoria, data.descripcion,
+    data.quien, data.monto, data.tipo,
+    p1val, p2val, saldo, cobra, "No", data.notas || ""
+  ]]);
+
+  return { success: true, row: targetRow };
+}
+
+function markPaid(rowNum) {
+  const sh = getSheet();
+  sh.getRange(rowNum, 12).setValue("Sí");
+  return { success: true };
+}`;
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+function init() {
+  loadConfig();
+  document.getElementById('apps-script-code').textContent = APPS_SCRIPT;
+
+  // Check saved session
+  const savedUser = localStorage.getItem('gd_user');
+  if (savedUser) {
+    state.user = savedUser;
+    enterApp();
+  }
+
+  // Default date
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+}
+
+function loadConfig() {
+  const saved = localStorage.getItem('gd_config');
+  if (saved) state.config = { ...state.config, ...JSON.parse(saved) };
+
+  document.getElementById('cfg-name1').value = state.config.name1;
+  document.getElementById('cfg-name2').value = state.config.name2;
+  document.getElementById('cfg-url').value   = state.config.sheetsUrl;
+
+  // Cargar preferencia de tema
+  const darkSaved = localStorage.getItem('gd_dark');
+  if (darkSaved === 'true') {
+    document.body.classList.add('dark');
+    const tog = document.getElementById('toggle-dark');
+    if (tog) tog.checked = true;
+  }
+
+  updateNameLabels();
+}
+
+function toggleDarkMode(isDark) {
+  document.body.classList.toggle('dark', isDark);
+  localStorage.setItem('gd_dark', isDark ? 'true' : 'false');
+  // Actualizar theme-color del navegador
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = isDark ? '#1a1612' : '#f0e8e0';
+}
+
+function saveConfig() {
+  state.config.name1      = document.getElementById('cfg-name1').value || 'Fede';
+  state.config.name2      = document.getElementById('cfg-name2').value || 'Mica';
+  state.config.sheetsUrl  = document.getElementById('cfg-url').value;
+  localStorage.setItem('gd_config', JSON.stringify(state.config));
+  updateNameLabels();
+}
+
+function updateNameLabels() {
+  const n1 = state.config.name1, n2 = state.config.name2;
+  document.getElementById('ln1').textContent = n1;
+  document.getElementById('ln2').textContent = n2;
+  document.getElementById('av1').textContent = n1[0].toUpperCase();
+  document.getElementById('av2').textContent = n2[0].toUpperCase();
+  document.getElementById('sc-name1').textContent = n1;
+  document.getElementById('sc-name2').textContent = n2;
+}
+
+// ════════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════════
+function login(who) {
+  state.user = who;
+  localStorage.setItem('gd_user', who);
+  enterApp();
+}
+
+function logout() {
+  localStorage.removeItem('gd_user');
+  state.user = null;
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('screen-main').style.display = 'none';
+}
+
+function enterApp() {
+  const n = state.user === 'p1' ? state.config.name1 : state.config.name2;
+  document.getElementById('welcome-name').textContent = `Hola, ${n} 👋`;
+  const av = document.getElementById('user-avatar');
+  av.textContent = n[0].toUpperCase();
+  av.style.background = state.user === 'p1' ? 'var(--accent1)' : 'var(--accent2)';
+  av.style.color = state.user === 'p1' ? 'var(--bg)' : 'var(--bg)';
+
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-main').style.display = 'flex';
+
+  showTab('balance');
+  fetchExpenses();
+}
+
+// ════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════
+function showTab(tab) {
+  ['balance','gastos','config'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = 'none';
+    const nb = document.getElementById(`nav-${t === 'gastos' ? 'gastos' : t === 'balance' ? 'balance' : 'config'}`);
+    if (nb) nb.classList.remove('active');
+  });
+  document.getElementById(`tab-${tab}`).style.display = 'block';
+  const nb = document.getElementById(`nav-${tab === 'gastos' ? 'gastos' : tab === 'balance' ? 'balance' : 'config'}`);
+  if (nb) nb.classList.add('active');
+
+  if (tab === 'balance') {
+    // Setear mes actual la primera vez que se abre
+    const balMes = document.getElementById('bal-mes');
+    if (balMes && balMes.value === 'Todos') {
+      const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      balMes.value = MESES[new Date().getMonth()];
+    }
+    renderBalance();
+  }
+  if (tab === 'gastos') renderExpenses();
+}
+
+// ════════════════════════════════════════════════════
+//  SYNC / FETCH
+// ════════════════════════════════════════════════════
+function setSyncStatus(s) {
+  state.syncStatus = s;
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  dot.className = 'sync-dot ' + s;
+  const map = {
+    offline: 'Sin conexión a Sheets — configurá la URL',
+    syncing: 'Sincronizando con Google Sheets...',
+    ok:      'Sincronizado con Google Sheets ✓',
+    error:   'Error al conectar — datos locales'
+  };
+  txt.textContent = map[s] || s;
+}
+
+// JSONP helper — evita bloqueo CORS de Apps Script
+// Apps Script soporta no-cors con mode redirect — usamos fetch con redirect follow
+async function gasRequest(url) {
+  // Intentar fetch directo primero (funciona en algunos navegadores/contextos)
+  try {
+    const res = await fetch(url, { redirect: 'follow' });
+    if (res.ok) return await res.json();
+  } catch(e) {}
+
+  // Fallback: allorigins proxy (más confiable con Apps Script)
+  const proxied = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+  const res2 = await fetch(proxied);
+  if (!res2.ok) throw new Error('HTTP ' + res2.status);
+  const wrapper = await res2.json();
+  return JSON.parse(wrapper.contents);
+}
+
+async function fetchExpenses() {
+  const url = state.config.sheetsUrl;
+  if (!url) {
+    setSyncStatus('offline');
+    loadLocalExpenses();
+    return;
+  }
+  setSyncStatus('syncing');
+  try {
+    const data = await gasRequest(`${url}?action=getAll`);
+    if (data.error) throw new Error(data.error);
+    state.expenses = data.expenses || [];
+    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('error');
+    loadLocalExpenses();
+    toast('⚠️ Usando datos guardados localmente');
+  }
+  renderBalance();
+  renderExpenses();
+}
+
+function loadLocalExpenses() {
+  const saved = localStorage.getItem('gd_expenses');
+  if (saved) {
+    state.expenses = JSON.parse(saved);
+  } else {
+    // Datos de ejemplo con los tickets del Coto
+    state.expenses = [
+      { row:5, fecha:'04/01/2026', categoria:'🛒 Supermercado', descripcion:'Coto Suc.165 – Compra (T0)', quien:state.config.name1, monto:155775, tipo:'50/50', p1:77887.5, p2:77887.5, saldo:77887.5, cobrador:state.config.name1+' cobra', pagado:'Sí', notas:'Ticket enero 1' },
+      { row:6, fecha:'30/01/2026', categoria:'🛒 Supermercado', descripcion:'Coto Suc.165 – Compra (T1)', quien:state.config.name2, monto:167258, tipo:'50/50', p1:83629, p2:83629, saldo:-83629, cobrador:state.config.name2+' cobra', pagado:'Sí', notas:'Ticket enero 2' },
+      { row:7, fecha:'27/02/2026', categoria:'🛒 Supermercado', descripcion:'Coto Suc.165 – Compra (T2)', quien:state.config.name2, monto:178411, tipo:'50/50', p1:89205.5, p2:89205.5, saldo:-89205.5, cobrador:state.config.name2+' cobra', pagado:'No', notas:'Ticket febrero' },
+      { row:8, fecha:'01/03/2026', categoria:'🏠 Alquiler y Expensas', descripcion:'Alquiler mensual', quien:state.config.name1, monto:120000, tipo:'50/50', p1:60000, p2:60000, saldo:60000, cobrador:state.config.name1+' cobra', pagado:'No', notas:'' },
+      { row:9, fecha:'05/03/2026', categoria:'🏠 Alquiler y Expensas', descripcion:'Expensas ordinarias', quien:state.config.name2, monto:35000, tipo:'50/50', p1:17500, p2:17500, saldo:-17500, cobrador:state.config.name2+' cobra', pagado:'No', notas:'' },
+      { row:10, fecha:'10/03/2026', categoria:'💡 Servicios', descripcion:'Factura eléctrica', quien:state.config.name1, monto:8500, tipo:'50/50', p1:4250, p2:4250, saldo:4250, cobrador:state.config.name1+' cobra', pagado:'No', notas:'Vence el 15' },
+    ];
+  }
+  renderBalance();
+  renderExpenses();
+}
+
+async function syncAddExpense(exp) {
+  const url = state.config.sheetsUrl;
+  if (!url) {
+    state.expenses.push(exp);
+    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+    return true;
+  }
+  setSyncStatus('syncing');
+  try {
+    const flat = {};
+    for (const k in exp) flat[k] = String(exp[k]);
+    flat.action = 'add';
+    const params = new URLSearchParams(flat);
+    const data = await gasRequest(`${url}?${params.toString()}`);
+    if (data.error) throw new Error(data.error);
+    setSyncStatus('ok');
+    await fetchExpenses();
+    return true;
+  } catch(e) {
+    setSyncStatus('error');
+    state.expenses.push(exp);
+    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+    toast('⚠️ Guardado localmente (sin sync)');
+    return false;
+  }
+}
+
+async function markAsPaid(row, idx) {
+  const url = state.config.sheetsUrl;
+  if (!url) {
+    state.expenses[idx].pagado = 'Sí';
+    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+    renderExpenses(); renderBalance();
+    toast('✓ Marcado como pagado');
+    return;
+  }
+  setSyncStatus('syncing');
+  try {
+    await gasRequest(`${url}?action=markPaid&row=${row}`);
+    setSyncStatus('ok');
+    await fetchExpenses();
+    toast('✓ Marcado como pagado');
+  } catch(e) {
+    state.expenses[idx].pagado = 'Sí';
+    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+    renderExpenses(); renderBalance();
+    setSyncStatus('error');
+    toast('✓ Guardado localmente');
+  }
+}
+
+async function syncEditExpense(exp, idx) {
+  const url = state.config.sheetsUrl;
+  // Actualizar local siempre
+  state.expenses[idx] = { ...state.expenses[idx], ...exp };
+  localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+
+  if (!url) return;
+  setSyncStatus('syncing');
+  try {
+    const flat = {};
+    for (const k in exp) flat[k] = String(exp[k]);
+    flat.action = 'edit';
+    const params = new URLSearchParams(flat);
+    await gasRequest(`${url}?${params.toString()}`);
+    setSyncStatus('ok');
+    await fetchExpenses();
+  } catch(e) {
+    setSyncStatus('error');
+    toast('⚠️ Cambio guardado localmente (sin sync)');
+  }
+}
+
+async function syncDeleteExpense(row, idx) {
+  const url = state.config.sheetsUrl;
+  // Eliminar local
+  state.expenses.splice(idx, 1);
+  localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+  renderExpenses(); renderBalance();
+  toast('✅ Gasto eliminado');
+
+  if (!url) return;
+  setSyncStatus('syncing');
+  try {
+    await gasRequest(`${url}?action=delete&row=${row}`);
+    setSyncStatus('ok');
+    await fetchExpenses();
+  } catch(e) {
+    setSyncStatus('error');
+    toast('⚠️ Eliminado localmente (sin sync con Sheets)');
+  }
+}
+
+async function testConnection() {
+  const url = state.config.sheetsUrl;
+  if (!url) { toast('⚠️ Primero ingresá la URL'); return; }
+  toast('Probando conexión...');
+  setSyncStatus('syncing');
+  try {
+    const data = await gasRequest(`${url}?action=getAll`);
+    if (data.error) throw new Error(data.error);
+    setSyncStatus('ok');
+    toast('✅ Conexión exitosa!');
+  } catch(e) {
+    setSyncStatus('error');
+    toast('❌ Error: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════
+//  RENDER BALANCE
+// ════════════════════════════════════════════════════
+function resetBalanceFilters() {
+  const mes = document.getElementById('bal-mes');
+  const tipo = document.getElementById('bal-tipo');
+  const pag = document.getElementById('bal-pagado');
+  if (mes) mes.value = 'Todos';
+  if (tipo) tipo.value = 'Todos';
+  if (pag) pag.value = 'Todos';
+  renderBalance();
+}
+
+function getBalanceFilters() {
+  return {
+    mes:    (document.getElementById('bal-mes')    || {value:'Todos'}).value,
+    tipo:   (document.getElementById('bal-tipo')   || {value:'Todos'}).value,
+    pagado: (document.getElementById('bal-pagado') || {value:'Todos'}).value,
+  };
+}
+
+function renderBalance() {
+  const filters = getBalanceFilters();
+  const n1 = state.config.name1, n2 = state.config.name2;
+
+  // Aplicar filtros
+  let exps = state.expenses.filter(e => {
+    if (filters.mes    !== 'Todos' && e.fecha     !== filters.mes)    return false;
+    if (filters.tipo   !== 'Todos' && e.tipo      !== filters.tipo)   return false;
+    if (filters.pagado !== 'Todos' && e.pagado    !== filters.pagado) return false;
+    return true;
+  });
+
+  // Marcar filtros activos
+  ['bal-mes','bal-tipo','bal-pagado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'bal-filter-select' + (el.value !== 'Todos' ? ' active' : '');
+  });
+
+  // Actualizar label del hero
+  const labelEl = document.getElementById('balance-label');
+  if (labelEl) {
+    labelEl.textContent = filters.mes !== 'Todos'
+      ? `SALDO — ${filters.mes.toUpperCase()}`
+      : filters.pagado === 'No' ? 'SALDO PENDIENTE' : 'SALDO DEL PERÍODO';
+  }
+
+  // Sub-label de las cards
+  const subLabel = filters.mes !== 'Todos' ? filters.mes : 'del período';
+  const sub1 = document.getElementById('sc-sub1');
+  const sub2 = document.getElementById('sc-sub2');
+  if (sub1) sub1.textContent = subLabel;
+  if (sub2) sub2.textContent = subLabel;
+
+  let total1 = 0, total2 = 0, saldoNeto = 0, totalGral = 0;
+
+  exps.forEach(e => {
+    const s = parseFloat(String(e.saldo).replace(/[^0-9.-]/g,'')) || 0;
+    const m = parseFloat(String(e.monto).replace(/[^0-9.-]/g,'')) || 0;
+    saldoNeto += s;
+    total1    += parseFloat(String(e.p1).replace(/[^0-9.-]/g,'')) || 0;
+    total2    += parseFloat(String(e.p2).replace(/[^0-9.-]/g,'')) || 0;
+    totalGral += m;
+  });
+
+  // Stats mini
+  const count = exps.filter(e => (parseFloat(String(e.monto).replace(/[^0-9.-]/g,''))||0) > 0).length;
+  const avg   = count ? totalGral / count : 0;
+  const cntEl = document.getElementById('bal-count');
+  const avgEl = document.getElementById('bal-avg');
+  const totEl = document.getElementById('bal-total');
+  if (cntEl) cntEl.textContent = count;
+  if (avgEl) avgEl.textContent = '$' + fmt(avg);
+  if (totEl) totEl.textContent = '$' + fmt(totalGral);
+
+  // Balance hero
+  const amtEl  = document.getElementById('balance-amount');
+  const whoEl  = document.getElementById('balance-who');
+  const heroEl = document.getElementById('balance-hero');
+
+  const abs = Math.abs(saldoNeto);
+  amtEl.textContent = '$' + fmt(abs);
+  if (saldoNeto > 100) {
+    amtEl.className = 'amount positive';
+    whoEl.textContent = `${n2} te debe a vos`;
+    heroEl.style.background = 'linear-gradient(135deg, rgba(126,200,164,.15), rgba(126,200,164,.06))';
+  } else if (saldoNeto < -100) {
+    amtEl.className = 'amount negative';
+    whoEl.textContent = `Vos le debés a ${n2}`;
+    heroEl.style.background = 'linear-gradient(135deg, rgba(244,162,107,.15), rgba(244,162,107,.06))';
+  } else {
+    amtEl.className = 'amount zero';
+    amtEl.textContent = '✅';
+    whoEl.textContent = 'Están al día';
+    heroEl.style.background = 'linear-gradient(135deg, var(--bg3), var(--surface))';
+  }
+
+  document.getElementById('sc-total1').textContent = '$' + fmt(total1);
+  document.getElementById('sc-total2').textContent = '$' + fmt(total2);
+
+  // Resumen por categoría
+  const catMap = {};
+  exps.forEach(e => {
+    const cat = (e.categoria || 'Otros').replace(/^[^\s]+\s/, '').trim();
+    const fullCat = e.categoria || 'Otros';
+    if (!catMap[fullCat]) catMap[fullCat] = { total: 0, p1: 0, p2: 0 };
+    catMap[fullCat].total += parseFloat(String(e.monto).replace(/[^0-9.-]/g,'')) || 0;
+    catMap[fullCat].p1    += parseFloat(String(e.p1).replace(/[^0-9.-]/g,'')) || 0;
+    catMap[fullCat].p2    += parseFloat(String(e.p2).replace(/[^0-9.-]/g,'')) || 0;
+  });
+
+  const sorted = Object.entries(catMap).sort((a,b) => b[1].total - a[1].total);
+  const container = document.getElementById('cat-summary');
+  if (!sorted.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📊</div>
+      <div class="empty-title">Sin datos para este filtro</div>
+      <div class="empty-sub">Probá cambiando los filtros de arriba</div>
+    </div>`;
+    return;
+  }
+
+  const grandTotal = sorted.reduce((s,c) => s + c[1].total, 0);
+  container.innerHTML = sorted
+    .filter(([,v]) => v.total > 0)
+    .map(([cat, vals]) => {
+      const pct = grandTotal ? Math.round(vals.total / grandTotal * 100) : 0;
+      // buscar color por nombre parcial
+      const colKey = Object.keys(CAT_COLORS).find(k => cat.includes(k) || k.includes(cat.replace(/^[^\s]+\s/,'').trim()));
+      const col = (colKey && CAT_COLORS[colKey]) || '#94a3b8';
+      const iconKey = Object.keys(CAT_ICONS).find(k => cat.includes(k) || k.includes(cat.replace(/^[^\s]+\s/,'').trim()));
+      const icon = (iconKey && CAT_ICONS[iconKey]) || '📦';
+      return `<div class="card card-sm" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:36px;height:36px;border-radius:10px;background:${col}22;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${icon}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">${cat}</div>
+            <div style="font-size:11px;color:var(--muted)">${pct}% del total</div>
+          </div>
+          <div style="font-family:var(--font-d);font-size:15px;font-weight:800;color:${col}">$${fmt(vals.total)}</div>
+        </div>
+        <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${col};border-radius:2px;transition:width .6s ease"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px">
+          <span style="color:var(--accent1d)">${n1}: $${fmt(vals.p1)}</span>
+          <span style="color:var(--accent2d)">${n2}: $${fmt(vals.p2)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+//  RENDER EXPENSES
+// ════════════════════════════════════════════════════
+function parseExpDate(fechaStr) {
+  if (!fechaStr) return null;
+  // Soporta dd/mm/yyyy y yyyy-mm-dd
+  if (String(fechaStr).includes('/')) {
+    const [d, m, y] = String(fechaStr).split('/');
+    return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);
+  }
+  return new Date(fechaStr);
+}
+
+function renderExpenses() {
+  const n1 = state.config.name1, n2 = state.config.name2;
+  let list = [...state.expenses].reverse();
+
+  if (state.filterMode === 'p1') list = list.filter(e => e.quien === n1 || e.tipo === 'P1');
+  if (state.filterMode === 'p2') list = list.filter(e => e.quien === n2 || e.tipo === 'P2');
+  if (state.filterMode === 'split') list = list.filter(e => e.tipo === '50/50');
+  if (state.filterMode === 'pending') list = list.filter(e => e.pagado === 'No');
+
+  // Filtro por fechas
+  const fromEl = document.getElementById('filter-date-from');
+  const toEl   = document.getElementById('filter-date-to');
+  const from   = fromEl && fromEl.value ? new Date(fromEl.value) : null;
+  const to     = toEl && toEl.value   ? new Date(toEl.value + 'T23:59:59') : null;
+
+  if (from || to) {
+    list = list.filter(e => {
+      const d = parseExpDate(e.fecha);
+      if (!d) return true;
+      if (from && d < from) return false;
+      if (to   && d > to)   return false;
+      return true;
+    });
+  }
+
+  const container = document.getElementById('expenses-list');
+
+  if (!list.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🧾</div>
+      <div class="empty-title">Sin gastos acá</div>
+      <div class="empty-sub">Cambiá el filtro o cargá un gasto nuevo con el botón +</div>
+    </div>`;
+    return;
+  }
+
+  const myName = state.user === 'p1' ? n1 : n2;
+
+  container.innerHTML = list.map((e, i) => {
+    const col = CAT_COLORS[e.categoria] || '#94a3b8';
+    const icon = CAT_ICONS[e.categoria] || '📦';
+    const isPaid = e.pagado === 'Sí';
+    const saldo = parseFloat(e.saldo) || 0;
+    const monto_num = parseFloat(String(e.monto).replace(/[^0-9.-]/g,'')) || 0;
+
+    let badgeClass = 'badge-split', badgeText = '50/50';
+    if (e.tipo === 'P1') { badgeClass = 'badge-p1'; badgeText = n1; }
+    if (e.tipo === 'P2') { badgeClass = 'badge-p2'; badgeText = n2; }
+
+    let saldoHtml = '';
+    if (e.tipo === '50/50' && !isPaid) {
+      if (saldo > 0) saldoHtml = `<div class="exp-saldo owed">+$${fmt(Math.abs(saldo))} a cobrar</div>`;
+      else if (saldo < 0) saldoHtml = `<div class="exp-saldo owes">−$${fmt(Math.abs(saldo))} a pagar</div>`;
+    }
+    if (isPaid) saldoHtml = `<div class="exp-paid">pagado</div>`;
+
+    const originalIdx = state.expenses.findIndex(x => x.row === e.row);
+
+    return `<div class="expense-item">
+      <div class="exp-icon" style="background:${col}22">${icon}</div>
+      <div class="exp-info">
+        <div class="exp-desc">${e.descripcion || e.categoria}</div>
+        <div class="exp-meta">
+          <span class="exp-badge ${badgeClass}">${badgeText}</span>
+          <span>${e.fecha || ''}</span>
+          <span style="color:var(--muted);font-size:10px">${e.quien || ''}</span>
+        </div>
+        <div class="exp-actions">
+          ${!isPaid && e.tipo === '50/50' ? `<button class="mark-paid-btn" onclick="markAsPaid(${e.row},${originalIdx})">✓ Pagar</button>` : ''}
+          <button class="action-btn edit" onclick="openEditExpense(${originalIdx})">✏️ Editar</button>
+          <button class="action-btn delete" onclick="openDeleteConfirm(${originalIdx})">🗑️</button>
+        </div>
+      </div>
+      <div class="exp-right">
+        <div class="exp-amount" style="color:${col}">$${fmt(monto_num)}</div>
+        ${saldoHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterExpenses(mode, el) {
+  state.filterMode = mode;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderExpenses();
+}
+
+function clearDateFilter() {
+  const f = document.getElementById('filter-date-from');
+  const t = document.getElementById('filter-date-to');
+  if (f) f.value = '';
+  if (t) t.value = '';
+  renderExpenses();
+}
+
+// ════════════════════════════════════════════════════
+//  NEW EXPENSE MODAL
+// ════════════════════════════════════════════════════
+function openNewExpense() {
+  state.editingIdx = null;
+  document.getElementById('modal-title-text').textContent = 'Nuevo gasto';
+  document.getElementById('modal-btn-row').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="submitExpense()">Guardar</button>`;
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-desc').value = '';
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-cat').value = '🛒 Supermercado';
+  // Mes actual por defecto
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('exp-mes').value = MESES[new Date().getMonth()];
+  selectTipo('50/50');
+  document.getElementById('modal-expense').classList.add('open');
+  setTimeout(() => document.getElementById('exp-amount').focus(), 300);
+}
+
+function openEditExpense(idx) {
+  const e = state.expenses[idx];
+  if (!e) return;
+  state.editingIdx = idx;
+
+  document.getElementById('modal-title-text').textContent = '✏️ Editar gasto';
+  document.getElementById('modal-btn-row').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="submitExpense()">Guardar cambios</button>`;
+
+  document.getElementById('exp-amount').value = e.monto || '';
+  document.getElementById('exp-desc').value   = e.descripcion || '';
+
+  // Mes
+  const mesEl = document.getElementById('exp-mes');
+  if (mesEl) mesEl.value = e.fecha || 'Enero';
+
+  // Fecha
+  document.getElementById('exp-date').value = '';
+
+  // Categoría
+  const catEl = document.getElementById('exp-cat');
+  catEl.value = e.categoria || '🛒 Supermercado';
+
+  selectTipo(e.tipo || '50/50');
+  document.getElementById('modal-expense').classList.add('open');
+}
+
+function openDeleteConfirm(idx) {
+  const e = state.expenses[idx];
+  if (!e) return;
+  state.editingIdx = idx;
+  document.getElementById('confirm-desc').textContent =
+    `¿Eliminar "${e.descripcion || e.categoria}" por $${fmt(e.monto)}? Esta acción no se puede deshacer.`;
+  document.getElementById('modal-confirm').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('modal-confirm').classList.remove('open');
+  state.editingIdx = null;
+}
+
+async function confirmDelete() {
+  const idx = state.editingIdx;
+  if (idx === null || idx === undefined) return;
+  const e = state.expenses[idx];
+  closeConfirm();
+  toast('Eliminando...');
+  await syncDeleteExpense(e.row, idx);
+}
+
+function closeModal() {
+  document.getElementById('modal-expense').classList.remove('open');
+  state.editingIdx = null;
+}
+
+function selectTipo(tipo) {
+  state.selectedTipo = tipo;
+  document.getElementById('tipo-p1').className    = 'tipo-btn' + (tipo === 'P1'    ? ' sel-p1'    : '');
+  document.getElementById('tipo-split').className = 'tipo-btn' + (tipo === '50/50' ? ' sel-split'  : '');
+  document.getElementById('tipo-p2').className    = 'tipo-btn' + (tipo === 'P2'    ? ' sel-p2'    : '');
+}
+
+async function submitExpense() {
+  const monto = parseFloat(document.getElementById('exp-amount').value);
+  const desc  = document.getElementById('exp-desc').value.trim();
+  const cat   = document.getElementById('exp-cat').value;
+  const fecha = document.getElementById('exp-date').value;
+  const tipo  = state.selectedTipo;
+
+  if (!monto || monto <= 0) { toast('⚠️ Ingresá un monto válido'); return; }
+  if (!desc) { toast('⚠️ Agregá una descripción'); return; }
+
+  const n1 = state.config.name1, n2 = state.config.name2;
+  const isEditing = state.editingIdx !== null && state.editingIdx !== undefined;
+  // En edición mantener quien pagó original, en nuevo usar el usuario actual
+  const quien = isEditing
+    ? state.expenses[state.editingIdx].quien
+    : (state.user === 'p1' ? n1 : n2);
+
+  const saldo = tipo === '50/50' ? (quien === n1 ? monto/2 : -monto/2) : 0;
+  const p1val = tipo === 'P1' ? monto : (tipo === '50/50' ? monto/2 : 0);
+  const p2val = tipo === 'P2' ? monto : (tipo === '50/50' ? monto/2 : 0);
+
+  const mesEl = document.getElementById('exp-mes');
+  const mes = mesEl ? mesEl.value : 'Otros';
+
+  const exp = {
+    fecha: mes,
+    categoria: cat, descripcion: desc, quien,
+    monto, tipo,
+    p1: p1val, p2: p2val, saldo,
+    cobrador: tipo === '50/50' ? `${quien} cobra` : '-',
+    pagado: isEditing ? (state.expenses[state.editingIdx].pagado || 'No') : 'No',
+    notas: isEditing ? (state.expenses[state.editingIdx].notas || '') : '',
+    name1: n1, name2: n2,
+    row: isEditing ? state.expenses[state.editingIdx].row : Date.now()
+  };
+
+  closeModal();
+
+  if (isEditing) {
+    toast('Guardando cambios...');
+    await syncEditExpense(exp, state.editingIdx);
+    if (navigator.vibrate) navigator.vibrate(60);
+  toast('✅ Gasto actualizado');
+  } else {
+    toast('Guardando...');
+    await syncAddExpense(exp);
+    if (navigator.vibrate) navigator.vibrate(60);
+  toast('✅ Gasto guardado');
+  }
+
+  showTab('gastos');
+  renderBalance();
+  renderExpenses();
+}
+
+// ════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════
+function fmt(n) {
+  return Math.round(n).toLocaleString('es-AR');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function copyScript() {
+  navigator.clipboard.writeText(APPS_SCRIPT)
+    .then(() => toast('✅ Código copiado!'))
+    .catch(() => toast('Seleccioná y copiá manualmente'));
+}
+
+// Close modal clicking outside
+document.getElementById('modal-expense').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('modal-confirm').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+
+// ════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
