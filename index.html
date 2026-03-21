@@ -860,15 +860,15 @@
     <div class="form-group">
       <label class="form-label">Categoría</label>
       <select class="form-select" id="exp-cat">
-        <option value="🏠 Alquiler y Expensas">🏠 Alquiler y Expensas</option>
-        <option value="🛒 Supermercado" selected>🛒 Supermercado</option>
-        <option value="💡 Servicios">💡 Servicios</option>
-        <option value="🍽️ Salidas">🍽️ Salidas</option>
-        <option value="🚗 Transporte">🚗 Transporte</option>
-        <option value="👤 Personal Fede">👤 Personal Fede</option>
-        <option value="👤 Personal Mica">👤 Personal Mica</option>
-        <option value="💰 Fondo Común">💰 Fondo Común</option>
-        <option value="📦 Otros">📦 Otros</option>
+        <option value="Alquiler y Expensas">Alquiler y Expensas</option>
+        <option value="Supermercado" selected>Supermercado</option>
+        <option value="Servicios">Servicios</option>
+        <option value="Salidas">Salidas</option>
+        <option value="Transporte">Transporte</option>
+        <option value="Personal Fede">Personal Fede</option>
+        <option value="Personal Mica">Personal Mica</option>
+        <option value="Fondo Comun">Fondo Comun</option>
+        <option value="Otros">Otros</option>
       </select>
     </div>
 
@@ -972,391 +972,166 @@ const CAT_COLORS = {
 // ════════════════════════════════════════════════════
 //  APPS SCRIPT CODE
 // ════════════════════════════════════════════════════
-const APPS_SCRIPT = `const SHEET_NAME = "📋 Gastos";
-const DATA_START = 7; // fila donde empiezan los datos en el Excel v4
+// ── Supabase ──────────────────────────────────────────────────────
+const SUPA_URL = 'https://cileqfmwbiantewungvd.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpbGVxZm13YmlhbnRld3VuZ3ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDU1OTgsImV4cCI6MjA4OTY4MTU5OH0.YpDL2MAzNkkcDYwWPnX_Cwj4k3Fmarw26Xx1wxbvey0';
 
-function doGet(e) {
-  return handleRequest(e);
-}
-function doPost(e) {
-  return handleRequest(e);
-}
-
-function handleRequest(e) {
-  const params = e.parameter;
-  const action = params.action || (e.postData ? JSON.parse(e.postData.contents).action : null);
-  const body = e.postData ? JSON.parse(e.postData.contents) : params;
-
-  let result;
-  try {
-    if (action === "getAll") result = getAllExpenses();
-    else if (action === "add") result = addExpense(body);
-    else if (action === "markPaid") result = markPaid(body.row);
-    else result = { error: "Unknown action" };
-  } catch(err) {
-    result = { error: err.message };
-  }
-
-  return ContentService
-    .createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function getSheet() {
-  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-}
-
-function getAllExpenses() {
-  const sh = getSheet();
-  const lastRow = sh.getLastRow();
-  if (lastRow < DATA_START) return { expenses: [] };
-
-  const rows = sh.getRange(DATA_START, 1, lastRow - DATA_START + 1, 13).getValues();
-  const expenses = rows
-    .filter(r => r[1] && r[5])
-    .map((r, i) => ({
-      row: DATA_START + i,
-      num: r[0], fecha: r[1], categoria: r[2], descripcion: r[3],
-      quien: r[4], monto: r[5], tipo: r[6],
-      p1: r[7], p2: r[8], saldo: r[9], cobrador: r[10],
-      pagado: r[11], notas: r[12]
-    }));
-  return { expenses };
-}
-
-function addExpense(data) {
-  const sh = getSheet();
-  let targetRow = DATA_START;
-  while (sh.getRange(targetRow, 2).getValue() !== "") targetRow++;
-
-  const saldo = data.tipo === "50/50"
-    ? (data.quien === data.name1 ? data.monto/2 : -data.monto/2)
-    : 0;
-  const p1val = data.tipo === "P1" ? data.monto : (data.tipo === "50/50" ? data.monto/2 : 0);
-  const p2val = data.tipo === "P2" ? data.monto : (data.tipo === "50/50" ? data.monto/2 : 0);
-  const cobra = data.tipo === "50/50"
-    ? (data.quien === data.name1 ? data.name1 + " cobra" : data.name2 + " cobra")
-    : "-";
-
-  sh.getRange(targetRow, 1, 1, 13).setValues([[
-    targetRow - DATA_START + 1,
-    data.fecha, data.categoria, data.descripcion,
-    data.quien, data.monto, data.tipo,
-    p1val, p2val, saldo, cobra, "No", data.notas || ""
-  ]]);
-
-  return { success: true, row: targetRow };
-}
-
-function markPaid(rowNum) {
-  const sh = getSheet();
-  sh.getRange(rowNum, 12).setValue("Sí");
-  return { success: true };
-}`;
-
-// ════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════
-function init() {
-  loadConfig();
-  document.getElementById('apps-script-code').textContent = APPS_SCRIPT;
-
-  // Check saved session
-  const savedUser = localStorage.getItem('gd_user');
-  if (savedUser) {
-    state.user = savedUser;
-    enterApp();
-  }
-
-  // Default date
-  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
-}
-
-function loadConfig() {
-  const saved = localStorage.getItem('gd_config');
-  if (saved) state.config = { ...state.config, ...JSON.parse(saved) };
-
-  document.getElementById('cfg-name1').value = state.config.name1;
-  document.getElementById('cfg-name2').value = state.config.name2;
-  document.getElementById('cfg-url').value   = state.config.sheetsUrl;
-
-  // Cargar preferencia de tema
-  const darkSaved = localStorage.getItem('gd_dark');
-  if (darkSaved === 'true') {
-    document.body.classList.add('dark');
-    const tog = document.getElementById('toggle-dark');
-    if (tog) tog.checked = true;
-  }
-
-  updateNameLabels();
-}
-
-function toggleDarkMode(isDark) {
-  document.body.classList.toggle('dark', isDark);
-  localStorage.setItem('gd_dark', isDark ? 'true' : 'false');
-  // Actualizar theme-color del navegador
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = isDark ? '#1a1612' : '#f0e8e0';
-}
-
-function saveConfig() {
-  state.config.name1      = document.getElementById('cfg-name1').value || 'Fede';
-  state.config.name2      = document.getElementById('cfg-name2').value || 'Mica';
-  state.config.sheetsUrl  = document.getElementById('cfg-url').value;
-  localStorage.setItem('gd_config', JSON.stringify(state.config));
-  updateNameLabels();
-}
-
-function updateNameLabels() {
-  const n1 = state.config.name1, n2 = state.config.name2;
-  document.getElementById('ln1').textContent = n1;
-  document.getElementById('ln2').textContent = n2;
-  document.getElementById('av1').textContent = n1[0].toUpperCase();
-  document.getElementById('av2').textContent = n2[0].toUpperCase();
-  document.getElementById('sc-name1').textContent = n1;
-  document.getElementById('sc-name2').textContent = n2;
-}
-
-// ════════════════════════════════════════════════════
-//  AUTH
-// ════════════════════════════════════════════════════
-function login(who) {
-  state.user = who;
-  localStorage.setItem('gd_user', who);
-  enterApp();
-}
-
-function logout() {
-  localStorage.removeItem('gd_user');
-  state.user = null;
-  document.getElementById('screen-login').style.display = 'flex';
-  document.getElementById('screen-main').style.display = 'none';
-}
-
-function enterApp() {
-  const n = state.user === 'p1' ? state.config.name1 : state.config.name2;
-  document.getElementById('welcome-name').textContent = `Hola, ${n} 👋`;
-  const av = document.getElementById('user-avatar');
-  av.textContent = n[0].toUpperCase();
-  av.style.background = state.user === 'p1' ? 'var(--accent1)' : 'var(--accent2)';
-  av.style.color = state.user === 'p1' ? 'var(--bg)' : 'var(--bg)';
-
-  document.getElementById('screen-login').style.display = 'none';
-  document.getElementById('screen-main').style.display = 'flex';
-
-  showTab('balance');
-  fetchExpenses();
-}
-
-// ════════════════════════════════════════════════════
-//  NAVIGATION
-// ════════════════════════════════════════════════════
-function showTab(tab) {
-  ['balance','gastos','config'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = 'none';
-    const nb = document.getElementById(`nav-${t === 'gastos' ? 'gastos' : t === 'balance' ? 'balance' : 'config'}`);
-    if (nb) nb.classList.remove('active');
-  });
-  document.getElementById(`tab-${tab}`).style.display = 'block';
-  const nb = document.getElementById(`nav-${tab === 'gastos' ? 'gastos' : tab === 'balance' ? 'balance' : 'config'}`);
-  if (nb) nb.classList.add('active');
-
-  if (tab === 'balance') {
-    // Setear mes actual la primera vez que se abre
-    const balMes = document.getElementById('bal-mes');
-    if (balMes && balMes.value === 'Todos') {
-      const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-      balMes.value = MESES[new Date().getMonth()];
+async function supaFetch(method, path, body) {
+  var opts = {
+    method: method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
     }
-    renderBalance();
-  }
-  if (tab === 'gastos') renderExpenses();
+  };
+  if (body) opts.body = JSON.stringify(body);
+  var res = await fetch(SUPA_URL + '/rest/v1/' + path, opts);
+  if (!res.ok) { var err = await res.text(); throw new Error(err); }
+  var txt = await res.text();
+  return txt ? JSON.parse(txt) : {};
 }
 
-// ════════════════════════════════════════════════════
-//  SYNC / FETCH
-// ════════════════════════════════════════════════════
 function setSyncStatus(s) {
   state.syncStatus = s;
-  const dot = document.getElementById('sync-dot');
-  const txt = document.getElementById('sync-text');
+  var dot = document.getElementById('sync-dot');
+  var txt = document.getElementById('sync-text');
   dot.className = 'sync-dot ' + s;
-  const map = {
-    offline: 'Sin conexión a Sheets — configurá la URL',
-    syncing: 'Sincronizando con Google Sheets...',
-    ok:      'Sincronizado con Google Sheets ✓',
-    error:   'Error al conectar — datos locales'
+  var map = {
+    offline: 'Sin conexion a Supabase',
+    syncing: 'Sincronizando...',
+    ok: 'Sincronizado con Supabase',
+    error: 'Error de conexion - datos locales'
   };
   txt.textContent = map[s] || s;
 }
 
-// JSONP helper — evita bloqueo CORS de Apps Script
-// Apps Script soporta no-cors con mode redirect — usamos fetch con redirect follow
-async function gasRequest(url) {
-  // Intentar fetch directo primero (funciona en algunos navegadores/contextos)
-  try {
-    const res = await fetch(url, { redirect: 'follow' });
-    if (res.ok) return await res.json();
-  } catch(e) {}
-
-  // Fallback: allorigins proxy (más confiable con Apps Script)
-  const proxied = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-  const res2 = await fetch(proxied);
-  if (!res2.ok) throw new Error('HTTP ' + res2.status);
-  const wrapper = await res2.json();
-  return JSON.parse(wrapper.contents);
-}
-
 async function fetchExpenses() {
-  const url = state.config.sheetsUrl;
-  if (!url) {
-    setSyncStatus('offline');
-    loadLocalExpenses();
-    return;
-  }
   setSyncStatus('syncing');
   try {
-    const data = await gasRequest(`${url}?action=getAll`);
-    if (data.error) throw new Error(data.error);
-    state.expenses = data.expenses || [];
+    var data = await supaFetch('GET', 'gastos?select=*&order=id.asc');
+    state.expenses = data.map(function(r) {
+      return {
+        row: r.id, id: r.id,
+        fecha: r.mes, mes: r.mes, anio: r.anio,
+        categoria: r.categoria, descripcion: r.descripcion,
+        quien: r.quien_pago, monto: r.monto, tipo: r.tipo,
+        p1: r.fede, p2: r.mica, saldo: r.saldo,
+        pagado: r.pagado, notas: r.notas || ''
+      };
+    });
     localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
     setSyncStatus('ok');
   } catch(e) {
     setSyncStatus('error');
     loadLocalExpenses();
-    toast('⚠️ Usando datos guardados localmente');
+    toast('Usando datos guardados localmente');
   }
   renderBalance();
   renderExpenses();
 }
 
 function loadLocalExpenses() {
-  const saved = localStorage.getItem('gd_expenses');
-  if (saved) {
-    state.expenses = JSON.parse(saved);
-  } else {
-    // Datos de ejemplo con los tickets del Coto
-    state.expenses = [
-      { row:5, fecha:'04/01/2026', categoria:'🛒 Supermercado', descripcion:'Coto Suc.165 – Compra (T0)', quien:state.config.name1, monto:155775, tipo:'50/50', p1:77887.5, p2:77887.5, saldo:77887.5, cobrador:state.config.name1+' cobra', pagado:'Sí', notas:'Ticket enero 1' },
-      { row:6, fecha:'30/01/2026', categoria:'🛒 Supermercado', descripcion:'Coto Suc.165 – Compra (T1)', quien:state.config.name2, monto:167258, tipo:'50/50', p1:83629, p2:83629, saldo:-83629, cobrador:state.config.name2+' cobra', pagado:'Sí', notas:'Ticket enero 2' },
-      { row:7, fecha:'27/02/2026', categoria:'🛒 Supermercado', descripcion:'Coto Suc.165 – Compra (T2)', quien:state.config.name2, monto:178411, tipo:'50/50', p1:89205.5, p2:89205.5, saldo:-89205.5, cobrador:state.config.name2+' cobra', pagado:'No', notas:'Ticket febrero' },
-      { row:8, fecha:'01/03/2026', categoria:'🏠 Alquiler y Expensas', descripcion:'Alquiler mensual', quien:state.config.name1, monto:120000, tipo:'50/50', p1:60000, p2:60000, saldo:60000, cobrador:state.config.name1+' cobra', pagado:'No', notas:'' },
-      { row:9, fecha:'05/03/2026', categoria:'🏠 Alquiler y Expensas', descripcion:'Expensas ordinarias', quien:state.config.name2, monto:35000, tipo:'50/50', p1:17500, p2:17500, saldo:-17500, cobrador:state.config.name2+' cobra', pagado:'No', notas:'' },
-      { row:10, fecha:'10/03/2026', categoria:'💡 Servicios', descripcion:'Factura eléctrica', quien:state.config.name1, monto:8500, tipo:'50/50', p1:4250, p2:4250, saldo:4250, cobrador:state.config.name1+' cobra', pagado:'No', notas:'Vence el 15' },
-    ];
-  }
+  var saved = localStorage.getItem('gd_expenses');
+  if (saved) { state.expenses = JSON.parse(saved); }
+  else { state.expenses = []; }
   renderBalance();
   renderExpenses();
 }
 
 async function syncAddExpense(exp) {
-  const url = state.config.sheetsUrl;
-  if (!url) {
-    state.expenses.push(exp);
-    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
-    return true;
-  }
   setSyncStatus('syncing');
   try {
-    const flat = {};
-    for (const k in exp) flat[k] = String(exp[k]);
-    flat.action = 'add';
-    const params = new URLSearchParams(flat);
-    const data = await gasRequest(`${url}?${params.toString()}`);
-    if (data.error) throw new Error(data.error);
+    var row = {
+      mes: exp.fecha, anio: 2026,
+      categoria: exp.categoria, descripcion: exp.descripcion,
+      quien_pago: exp.quien, monto: parseFloat(exp.monto),
+      tipo: exp.tipo, fede: parseFloat(exp.p1), mica: parseFloat(exp.p2),
+      saldo: parseFloat(exp.saldo), pagado: 'No', notas: exp.notas || ''
+    };
+    await supaFetch('POST', 'gastos', row);
     setSyncStatus('ok');
     await fetchExpenses();
     return true;
   } catch(e) {
     setSyncStatus('error');
+    exp.row = Date.now();
     state.expenses.push(exp);
     localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
-    toast('⚠️ Guardado localmente (sin sync)');
+    toast('Guardado localmente (sin sync)');
     return false;
   }
 }
 
 async function markAsPaid(row, idx) {
-  const url = state.config.sheetsUrl;
-  if (!url) {
-    state.expenses[idx].pagado = 'Sí';
-    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
-    renderExpenses(); renderBalance();
-    toast('✓ Marcado como pagado');
-    return;
-  }
   setSyncStatus('syncing');
   try {
-    await gasRequest(`${url}?action=markPaid&row=${row}`);
+    await supaFetch('PATCH', 'gastos?id=eq.' + row, { pagado: 'Si' });
     setSyncStatus('ok');
     await fetchExpenses();
-    toast('✓ Marcado como pagado');
+    toast('Marcado como pagado');
   } catch(e) {
-    state.expenses[idx].pagado = 'Sí';
+    state.expenses[idx].pagado = 'Si';
     localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
     renderExpenses(); renderBalance();
     setSyncStatus('error');
-    toast('✓ Guardado localmente');
+    toast('Guardado localmente');
   }
 }
 
 async function syncEditExpense(exp, idx) {
-  const url = state.config.sheetsUrl;
-  // Actualizar local siempre
-  state.expenses[idx] = { ...state.expenses[idx], ...exp };
-  localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
-
-  if (!url) return;
+  state.expenses[idx] = Object.assign({}, state.expenses[idx], exp);
+  renderExpenses(); renderBalance();
   setSyncStatus('syncing');
   try {
-    const flat = {};
-    for (const k in exp) flat[k] = String(exp[k]);
-    flat.action = 'edit';
-    const params = new URLSearchParams(flat);
-    await gasRequest(`${url}?${params.toString()}`);
+    var row = {
+      mes: exp.fecha, categoria: exp.categoria, descripcion: exp.descripcion,
+      quien_pago: exp.quien, monto: parseFloat(exp.monto), tipo: exp.tipo,
+      fede: parseFloat(exp.p1), mica: parseFloat(exp.p2),
+      saldo: parseFloat(exp.saldo), pagado: exp.pagado || 'No', notas: exp.notas || ''
+    };
+    await supaFetch('PATCH', 'gastos?id=eq.' + exp.row, row);
     setSyncStatus('ok');
     await fetchExpenses();
   } catch(e) {
     setSyncStatus('error');
-    toast('⚠️ Cambio guardado localmente (sin sync)');
+    localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
+    toast('Cambio guardado localmente');
   }
 }
 
 async function syncDeleteExpense(row, idx) {
-  const url = state.config.sheetsUrl;
-  // Eliminar local
   state.expenses.splice(idx, 1);
   localStorage.setItem('gd_expenses', JSON.stringify(state.expenses));
   renderExpenses(); renderBalance();
-  toast('✅ Gasto eliminado');
-
-  if (!url) return;
+  toast('Gasto eliminado');
   setSyncStatus('syncing');
   try {
-    await gasRequest(`${url}?action=delete&row=${row}`);
+    await supaFetch('DELETE', 'gastos?id=eq.' + row);
     setSyncStatus('ok');
-    await fetchExpenses();
   } catch(e) {
     setSyncStatus('error');
-    toast('⚠️ Eliminado localmente (sin sync con Sheets)');
   }
 }
 
 async function testConnection() {
-  const url = state.config.sheetsUrl;
-  if (!url) { toast('⚠️ Primero ingresá la URL'); return; }
-  toast('Probando conexión...');
+  toast('Probando conexion...');
   setSyncStatus('syncing');
   try {
-    const data = await gasRequest(`${url}?action=getAll`);
-    if (data.error) throw new Error(data.error);
+    await supaFetch('GET', 'gastos?select=id&limit=1');
     setSyncStatus('ok');
-    toast('✅ Conexión exitosa!');
+    toast('Conexion con Supabase exitosa!');
   } catch(e) {
     setSyncStatus('error');
-    toast('❌ Error: ' + e.message);
+    toast('Error: ' + e.message);
   }
+}
+
+function startRealtimeSync() {
+  setInterval(function() {
+    if (document.visibilityState === 'visible') fetchExpenses();
+  }, 30000);
 }
 
 // ════════════════════════════════════════════════════
@@ -1791,6 +1566,107 @@ document.getElementById('modal-confirm').addEventListener('click', function(e) {
 
 // ════════════════════════════════════════════════════
 init();
+
+// CONFIG & AUTH & INIT
+function loadConfig() {
+  var saved = localStorage.getItem('gd_config');
+  if (saved) {
+    try { state.config = Object.assign({}, state.config, JSON.parse(saved)); } catch(e) {}
+  }
+  var el1 = document.getElementById('cfg-name1');
+  var el2 = document.getElementById('cfg-name2');
+  if (el1) el1.value = state.config.name1;
+  if (el2) el2.value = state.config.name2;
+  var darkSaved = localStorage.getItem('gd_dark');
+  if (darkSaved === 'true') {
+    document.body.classList.add('dark');
+    var tog = document.getElementById('toggle-dark');
+    if (tog) tog.checked = true;
+  }
+  updateNameLabels();
+}
+
+function saveConfig() {
+  var el1 = document.getElementById('cfg-name1');
+  var el2 = document.getElementById('cfg-name2');
+  state.config.name1 = (el1 && el1.value) || 'Fede';
+  state.config.name2 = (el2 && el2.value) || 'Mica';
+  localStorage.setItem('gd_config', JSON.stringify(state.config));
+  updateNameLabels();
+}
+
+function toggleDarkMode(isDark) {
+  document.body.classList.toggle('dark', isDark);
+  localStorage.setItem('gd_dark', isDark ? 'true' : 'false');
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = isDark ? '#1a1612' : '#f0e8e0';
+}
+
+function updateNameLabels() {
+  var n1 = state.config.name1, n2 = state.config.name2;
+  var pairs = [['ln1',n1],['ln2',n2],['sc-name1',n1],['sc-name2',n2]];
+  pairs.forEach(function(p) {
+    var el = document.getElementById(p[0]);
+    if (el) el.textContent = p[1];
+  });
+  var av1 = document.getElementById('av1');
+  var av2 = document.getElementById('av2');
+  if (av1) av1.textContent = n1[0].toUpperCase();
+  if (av2) av2.textContent = n2[0].toUpperCase();
+}
+
+function login(who) {
+  state.user = who;
+  localStorage.setItem('gd_user', who);
+  enterApp();
+}
+
+function logout() {
+  localStorage.removeItem('gd_user');
+  state.user = null;
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('screen-main').style.display = 'none';
+}
+
+function enterApp() {
+  var n = state.user === 'p1' ? state.config.name1 : state.config.name2;
+  var wn = document.getElementById('welcome-name');
+  if (wn) wn.textContent = 'Hola, ' + n + ' ';
+  var av = document.getElementById('user-avatar');
+  if (av) {
+    av.textContent = n[0].toUpperCase();
+    av.style.background = state.user === 'p1' ? 'var(--accent1)' : 'var(--accent2)';
+  }
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-main').style.display = 'flex';
+  showTab('balance');
+  fetchExpenses();
+  startRealtimeSync();
+}
+
+function showTab(tab) {
+  ['balance', 'gastos', 'config'].forEach(function(t) {
+    var tabEl = document.getElementById('tab-' + t);
+    var navEl = document.getElementById('nav-' + t);
+    if (tabEl) tabEl.style.display = 'none';
+    if (navEl) navEl.classList.remove('active');
+  });
+  var activeTab = document.getElementById('tab-' + tab);
+  var activeNav = document.getElementById('nav-' + tab);
+  if (activeTab) activeTab.style.display = 'block';
+  if (activeNav) activeNav.classList.add('active');
+  if (tab === 'balance') renderBalance();
+  if (tab === 'gastos') renderExpenses();
+}
+
+function init() {
+  loadConfig();
+  var savedUser = localStorage.getItem('gd_user');
+  if (savedUser) {
+    state.user = savedUser;
+    enterApp();
+  }
+}
 </script>
 </body>
 </html>
